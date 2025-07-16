@@ -3,7 +3,7 @@ name: CI / CD with Single Approval for Dev & Prod
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   # 1) Build

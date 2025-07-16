@@ -5,11 +5,17 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read       # for checkout/download
+  issues: write        # for creating the approval issue
+  actions: write       # for the approval action
+
 jobs:
   # 1) Build
   build:
     name: 🛠 Build & Package
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,31 +27,81 @@ jobs:
           # or make build
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4       # v4 replaces the deprecated v3
+        uses: actions/upload-artifact@v4   # upgraded from v3
         with:
           name: build-output
           path: path/to/build
 
   # 2a) Wait for Dev approval
   wait-dev:
-    name: ✅ Wait for Dev Approval
+    name: ✅ Await Dev Approval
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Request Dev approval
-        uses: trstringer/manual-workflow-approval@v1.11.0
+        uses: trstringer/manual-approval@v1
         with:
-          approvers: |
-            @your-username            # GitHub handle(s) who can approve
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: your-dev-approver1,your-dev-approver2
           issue-title: "Approve ▶️ Dev Deployment"
           approve-comment: "approved"
           deny-comment: "denied"
 
   # 2b) Wait for Prod approval
   wait-prod:
-    name: ✅ Wait for Prod Approval
+    name: ✅ Await Prod Approval
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Request Prod approval
-        uses: trstringer/manual-workflow-approval@v1
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: your-prod-approver1,your-prod-approver2
+          issue-title: "Approve 🚀 Prod Deployment"
+          approve-comment: "approved"
+          deny-comment: "denied"
+
+  # 3a) Deploy to Dev
+  deploy-dev:
+    name: 🚀 Deploy to Dev
+    needs: wait-dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-output
+
+      - name: Deploy to Dev
+        run: |
+          echo "▶️ Deploying to dev..."
+          # e.g. kubectl apply -f k8s/dev/
+          # or ./deploy.sh dev
+
+  # 3b) Deploy to Prod
+  deploy-prod:
+    name: 🚀 Deploy to Prod
+    needs: wait-prod
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-output
+
+      - name: Deploy to Prod
+        run: |
+          echo "▶️ Deploying to prod..."
+          # e.g. kubectl apply -f k8s/prod/
+          # or ./deploy.sh prod

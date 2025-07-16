@@ -1,24 +1,22 @@
-name: CI / CD with Manual Approvals
+name: CI / CD with Single Approval for Dev & Prod
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
-
   # 1) Build
   build:
-    name: Build
+    name: 🛠 Build
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Build artifact
         run: |
-          echo "▶️ Building..."
+          echo "🔨 Building..."
           # e.g. docker build -t myapp:${{ github.run_id }} .
           # or make build
 
@@ -28,27 +26,25 @@ jobs:
           name: build-output
           path: path/to/build
 
-  # 2) Wait for Dev approval
-  wait-dev:
-    name: ✅ Wait for Dev Approval
+  # 2) Single manual approval for both environments
+  approval:
+    name: ✅ Await Dev & Prod Approval
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Request Dev approval
+      - name: Request Approval
         uses: mheap/approve-action@v1
         with:
-          # Who can approve: list GitHub handles
           reviewers: |
-            @your-username
-          message: "Approve deployment to **dev**?"
+            @your-username       # who can approve
+          message: |
+            Please approve deployment to both **dev** and **prod**.
 
-  # 3) Deploy to Dev
+  # 3) Deploy to Dev (runs only after approval)
   deploy-dev:
     name: 🚀 Deploy to Dev
-    needs: wait-dev
+    needs: approval
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -64,26 +60,11 @@ jobs:
           # e.g. kubectl apply -f k8s/dev/
           # or ./deploy.sh dev
 
-  # 4) Wait for Prod approval
-  wait-prod:
-    name: ✅ Wait for Prod Approval
-    needs: deploy-dev
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Request Prod approval
-        uses: mheap/approve-action@v1
-        with:
-          reviewers: |
-            @your-username
-          message: "Approve deployment to **prod**?"
-
-  # 5) Deploy to Prod
+  # 4) Deploy to Prod (runs only after approval)
   deploy-prod:
     name: 🚀 Deploy to Prod
-    needs: wait-prod
+    needs: approval
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

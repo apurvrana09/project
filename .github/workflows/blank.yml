@@ -42,7 +42,7 @@ jobs:
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: alice,bob              # ← replace with real GitHub usernames
+          approvers: apurvrana09             # ← replace with real GitHub usernames
           issue-title: "Approve ▶️ Dev Deployment"
           minimum-approvals: 1
           fail-on-denial: true
@@ -57,7 +57,7 @@ jobs:
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: carol,dave            # ← replace with real GitHub usernames
+          approvers: apurvrana09            # ← replace with real GitHub usernames
           issue-title: "Approve 🚀 Prod Deployment"
           minimum-approvals: 1
           fail-on-denial: true

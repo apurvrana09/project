@@ -6,102 +6,80 @@ on:
       - master
 
 permissions:
-  contents: read       # for checkout/download
-  issues: write        # for creating the approval issue
-  actions: write       # for the approval action
+  contents: read
+  issues: write
+  actions: write
 
 jobs:
-  # 1) Build
   build:
     name: 🛠 Build & Package
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Build artifact
         run: |
           echo "🔨 Building..."
-          # e.g. docker build -t myapp:${{ github.run_id }} .
-          # or make build
-
+          # your build commands here
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4   # upgraded from v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: path/to/build
 
-  # 2a) Wait for Dev approval
   wait-dev:
     name: ✅ Await Dev Approval
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Request Dev approval
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: your-dev-approver1,your-dev-approver2
+          approvers: apurvrana09           # ← replace with real GitHub usernames
           issue-title: "Approve ▶️ Dev Deployment"
-          approve-comment: "approved"
-          deny-comment: "denied"
+          minimum-approvals: 1
+          fail-on-denial: true
 
-  # 2b) Wait for Prod approval
   wait-prod:
     name: ✅ Await Prod Approval
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Request Prod approval
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: your-prod-approver1,your-prod-approver2
+          approvers: apurvrana09        # ← replace with real GitHub usernames
           issue-title: "Approve 🚀 Prod Deployment"
-          approve-comment: "approved"
-          deny-comment: "denied"
+          minimum-approvals: 1
+          fail-on-denial: true
 
-  # 3a) Deploy to Dev
   deploy-dev:
     name: 🚀 Deploy to Dev
     needs: wait-dev
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifact
+      - uses: actions/checkout@v4
+      - name: Download artifact
         uses: actions/download-artifact@v3
         with:
           name: build-output
-
       - name: Deploy to Dev
         run: |
           echo "▶️ Deploying to dev..."
-          # e.g. kubectl apply -f k8s/dev/
-          # or ./deploy.sh dev
+          # your deploy commands here
 
-  # 3b) Deploy to Prod
   deploy-prod:
     name: 🚀 Deploy to Prod
     needs: wait-prod
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifact
+      - uses: actions/checkout@v4
+      - name: Download artifact
         uses: actions/download-artifact@v3
         with:
           name: build-output
-
       - name: Deploy to Prod
         run: |
           echo "▶️ Deploying to prod..."
-          # e.g. kubectl apply -f k8s/prod/
-          # or ./deploy.sh prod
+          # your deploy commands here
